@@ -1,0 +1,54 @@
+name: Get Repo Versions
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to apply'
+        required: true
+      branch:
+        description: 'Branch to tag'
+        required: true
+        type: choice
+        options:
+          - main
+          - release/4.21
+          - release/4.22
+          - release/4.23
+          - release/4.24
+env:
+  username: ${{secrets.DEPLOYMENT_USERNAME}}
+  password: ${{secrets.DEPLOYMENT_PAT}}
+
+jobs:
+  get-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: [ "nirmata/java-security", "nirmata/java-config"]  # Add your repositories here
+    steps:
+      - name: Checkout release management repo
+        uses: actions/checkout@v4
+
+      - name: Checkout target repository ${{ matrix.repo }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          ref: ${{ github.event.inputs.branch }}
+          token: ${{ secrets.DEPLOYMENT_PAT }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21' # Change based on your project requirements
+
+      - name: Grant execute permissions to Gradle
+        run: chmod +x gradlew
+
+      - name: Retrieve version from Gradle
+        id: get_version
+        run: echo "VERSION=$(./gradlew showVersion -q)" >> $GITHUB_ENV
+
+      - name: Output version
+        run: echo "Version of ${{ matrix.repo }} is $VERSION"
