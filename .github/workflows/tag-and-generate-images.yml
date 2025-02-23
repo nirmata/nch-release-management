@@ -1,6 +1,6 @@
 # This is a basic workflow that is manually triggered
 
-name: Tag Release
+name: Tag and Generate Images
 
 on:
   workflow_dispatch:
