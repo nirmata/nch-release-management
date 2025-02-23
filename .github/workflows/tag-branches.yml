@@ -1,0 +1,61 @@
+# This is a basic workflow that is manually triggered
+
+name: Tag Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'Select a release branch'
+        required: true
+        default: 'release/4.22'
+        type: choice
+        options:
+          - release/4.22
+          - release/4.23
+          - release/4.24
+      release_tag:
+        description: 'Enter a tag for the release'
+        required: true
+        type: string
+env:
+  username: ${{secrets.DEPLOYMENT_USERNAME}}
+  password: ${{secrets.DEPLOYMENT_PAT}}
+
+jobs:
+  tag-branch-and-build-image:
+    runs-on: ubuntu-latest
+    strategy:
+       matrix:
+        repo: [ "java-activity", "java-catalog", "java-client-gateway", "java-cluster", "java-config", "java-environments", "gateway-service", "nirmata-haproxy", "java-host", "java-orchestrator", "policies-service", "java-security", "java-users", "webclient"]
+
+    steps:
+      - name: Checkout release management repo
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Git configuration (for tagging)
+      - name: Set up Git
+        run: |
+          git config --global user.name ${{secrets.DEPLOYMENT_USERNAME}}
+          git config --global user.email "github-actions@github.com"
+
+      # Step 3: Checkout and tag each repository
+      - name: Tag and build ${{ matrix.repo }} with branch=${{ github.event.inputs.release_branch }}, tag=${{ github.event.inputs.release_tag }}
+        run: |
+          git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/${{matrix.repo}}.git
+
+          cd ${{ matrix.repo }}
+          git fetch --tags
+
+          # Check if the tag exists and delete it if it does
+          if git show-ref --tags ${{ github.event.inputs.release_tag }}; then
+            git tag -d ${{ github.event.inputs.release_tag }}
+            git push --delete origin ${{ github.event.inputs.release_tag }}
+          fi
+
+          # Checkout the selected branch
+          git checkout ${{ github.event.inputs.release_branch }}
+          
+          # Tag the branch with the given tag
+          git tag ${{ github.event.inputs.release_tag }}
+          git push origin ${{ github.event.inputs.release_tag }}         
