@@ -87,4 +87,39 @@ jobs:
           build-args: |
             SOURCE_IMAGE=quay.io/mongodb/mongodb-kubernetes-readinessprobe:1.0.23
           provenance: false
-          sbom: false 
+          sbom: false
+
+      - name: Sync MongoDB Kubernetes Operator
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator:0.13.0
+          build-args: |
+            SOURCE_IMAGE=quay.io/mongodb/mongodb-kubernetes-operator:0.13.0
+          provenance: false
+          sbom: false
+
+      - name: Verify Multi-Arch Support
+        run: |
+          for image in mongodb-community-server mongodb-agent-ubi mongodb-kubernetes-operator-version-upgrade-post-start-hook mongodb-kubernetes-readinessprobe mongodb-kubernetes-operator; do
+            echo "Verifying $image"
+            if [[ "$image" == "mongodb-community-server" ]]; then
+              tag="8.0.8-ubi8"
+            elif [[ "$image" == "mongodb-agent-ubi" ]]; then
+              tag="108.0.2.8729-1"
+            elif [[ "$image" == "mongodb-kubernetes-operator-version-upgrade-post-start-hook" ]]; then
+              tag="1.0.10"
+            elif [[ "$image" == "mongodb-kubernetes-readinessprobe" ]]; then
+              tag="1.0.23"
+            elif [[ "$image" == "mongodb-kubernetes-operator" ]]; then
+              tag="0.13.0"
+            fi
+            echo "Verifying $image:$tag"
+            docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:$tag | grep -q '"architecture": "amd64"' || exit 1
+            docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:$tag | grep -q '"architecture": "arm64"' || exit 1
+            echo "Multi-arch support verified for $image:$tag"
+          done 
