@@ -9,11 +9,81 @@ on:
         description: 'Release tag to apply'
         required: true
         type: string
-      tag_repositories:
-        description: 'Tag all repositories with the release tag'
+      tag_all_repos:
+        description: 'Tag all NCH repositories'
         required: false
         type: boolean
         default: true
+      tag_java_activity:
+        description: 'Tag java-activity repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_catalog:
+        description: 'Tag java-catalog repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_client_gateway:
+        description: 'Tag java-client-gateway repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_cluster:
+        description: 'Tag java-cluster repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_config:
+        description: 'Tag java-config repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_environments:
+        description: 'Tag java-environments repository'
+        required: false
+        type: boolean
+        default: false
+      tag_gateway_service:
+        description: 'Tag gateway-service repository'
+        required: false
+        type: boolean
+        default: false
+      tag_nirmata_haproxy:
+        description: 'Tag nirmata-haproxy repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_host:
+        description: 'Tag java-host repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_orchestrator:
+        description: 'Tag java-orchestrator repository'
+        required: false
+        type: boolean
+        default: false
+      tag_policies_service:
+        description: 'Tag policies-service repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_security:
+        description: 'Tag java-security repository'
+        required: false
+        type: boolean
+        default: false
+      tag_java_users:
+        description: 'Tag java-users repository'
+        required: false
+        type: boolean
+        default: false
+      tag_webclient:
+        description: 'Tag webclient repository'
+        required: false
+        type: boolean
+        default: false
       tag_mongodb_images:
         description: 'Tag MongoDB images with the release tag'
         required: false
@@ -26,7 +96,7 @@ env:
 
 jobs:
   tag-branch-and-build-image:
-    if: ${{ github.event.inputs.tag_repositories == 'true' }}
+    if: ${{ github.event.inputs.tag_all_repos == 'true' || github.event.inputs.tag_java_activity == 'true' || github.event.inputs.tag_java_catalog == 'true' || github.event.inputs.tag_java_client_gateway == 'true' || github.event.inputs.tag_java_cluster == 'true' || github.event.inputs.tag_java_config == 'true' || github.event.inputs.tag_java_environments == 'true' || github.event.inputs.tag_gateway_service == 'true' || github.event.inputs.tag_nirmata_haproxy == 'true' || github.event.inputs.tag_java_host == 'true' || github.event.inputs.tag_java_orchestrator == 'true' || github.event.inputs.tag_policies_service == 'true' || github.event.inputs.tag_java_security == 'true' || github.event.inputs.tag_java_users == 'true' || github.event.inputs.tag_webclient == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,14 +113,45 @@ jobs:
 
       - name: Tag repositories
         run: |
-          for repo in "java-activity" "java-catalog" "java-client-gateway" "java-cluster" "java-config" "java-environments" "gateway-service" "nirmata-haproxy" "java-host" "java-orchestrator" "policies-service" "java-security" "java-users" "webclient"; do
-            echo "Tagging $repo"
-            git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/$repo.git
-            cd $repo
-            git tag ${{ github.event.inputs.release_tag }}
-            git push origin ${{ github.event.inputs.release_tag }}
-            cd ..
-          done
+          # Define repository mapping
+          declare -A repo_map
+          repo_map["java-activity"]=${{ github.event.inputs.tag_java_activity }}
+          repo_map["java-catalog"]=${{ github.event.inputs.tag_java_catalog }}
+          repo_map["java-client-gateway"]=${{ github.event.inputs.tag_java_client_gateway }}
+          repo_map["java-cluster"]=${{ github.event.inputs.tag_java_cluster }}
+          repo_map["java-config"]=${{ github.event.inputs.tag_java_config }}
+          repo_map["java-environments"]=${{ github.event.inputs.tag_java_environments }}
+          repo_map["gateway-service"]=${{ github.event.inputs.tag_gateway_service }}
+          repo_map["nirmata-haproxy"]=${{ github.event.inputs.tag_nirmata_haproxy }}
+          repo_map["java-host"]=${{ github.event.inputs.tag_java_host }}
+          repo_map["java-orchestrator"]=${{ github.event.inputs.tag_java_orchestrator }}
+          repo_map["policies-service"]=${{ github.event.inputs.tag_policies_service }}
+          repo_map["java-security"]=${{ github.event.inputs.tag_java_security }}
+          repo_map["java-users"]=${{ github.event.inputs.tag_java_users }}
+          repo_map["webclient"]=${{ github.event.inputs.tag_webclient }}
+
+          # Tag all repositories if tag_all_repos is true, otherwise tag only selected ones
+          if [ "${{ github.event.inputs.tag_all_repos }}" = "true" ]; then
+            for repo in "${!repo_map[@]}"; do
+              echo "Tagging $repo"
+              git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/$repo.git
+              cd $repo
+              git tag ${{ github.event.inputs.release_tag }}
+              git push origin ${{ github.event.inputs.release_tag }}
+              cd ..
+            done
+          else
+            for repo in "${!repo_map[@]}"; do
+              if [ "${repo_map[$repo]}" = "true" ]; then
+                echo "Tagging $repo"
+                git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/$repo.git
+                cd $repo
+                git tag ${{ github.event.inputs.release_tag }}
+                git push origin ${{ github.event.inputs.release_tag }}
+                cd ..
+              fi
+            done
+          fi
 
   tag-mongodb-images:
     if: ${{ github.event.inputs.tag_mongodb_images == 'true' }}
