@@ -98,6 +98,11 @@ on:
         required: false
         type: boolean
         default: true
+      tag_go_llm_apps:
+        description: 'Tag go-llm-apps repository'
+        required: false
+        type: boolean
+        default: false
 
 env:
   REGISTRY: ghcr.io
@@ -105,7 +110,7 @@ env:
 
 jobs:
   tag-branch-and-build-image:
-    if: ${{ github.event.inputs.tag_all_repos == 'true' || github.event.inputs.tag_java_activity == 'true' || github.event.inputs.tag_java_catalog == 'true' || github.event.inputs.tag_java_client_gateway == 'true' || github.event.inputs.tag_java_cluster == 'true' || github.event.inputs.tag_java_config == 'true' || github.event.inputs.tag_java_environments == 'true' || github.event.inputs.tag_gateway_service == 'true' || github.event.inputs.tag_nirmata_haproxy == 'true' || github.event.inputs.tag_java_host == 'true' || github.event.inputs.tag_java_orchestrator == 'true' || github.event.inputs.tag_policies_service == 'true' || github.event.inputs.tag_java_security == 'true' || github.event.inputs.tag_java_users == 'true' || github.event.inputs.tag_webclient == 'true' }}
+    if: ${{ github.event.inputs.tag_all_repos == 'true' || github.event.inputs.tag_java_activity == 'true' || github.event.inputs.tag_java_catalog == 'true' || github.event.inputs.tag_java_client_gateway == 'true' || github.event.inputs.tag_java_cluster == 'true' || github.event.inputs.tag_java_config == 'true' || github.event.inputs.tag_java_environments == 'true' || github.event.inputs.tag_gateway_service == 'true' || github.event.inputs.tag_nirmata_haproxy == 'true' || github.event.inputs.tag_java_host == 'true' || github.event.inputs.tag_java_orchestrator == 'true' || github.event.inputs.tag_policies_service == 'true' || github.event.inputs.tag_java_security == 'true' || github.event.inputs.tag_java_users == 'true' || github.event.inputs.tag_webclient == 'true' || github.event.inputs.tag_go_llm_apps == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -138,6 +143,7 @@ jobs:
           repo_map["java-security"]=${{ github.event.inputs.tag_java_security }}
           repo_map["java-users"]=${{ github.event.inputs.tag_java_users }}
           repo_map["webclient"]=${{ github.event.inputs.tag_webclient }}
+          repo_map["go-llm-apps"]=${{ github.event.inputs.tag_go_llm_apps }}
 
           # Tag all repositories if tag_all_repos is true, otherwise tag only selected ones
           if [ "${{ github.event.inputs.tag_all_repos }}" = "true" ]; then
