@@ -36,6 +36,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Git
+        run: |
+          git config --global user.name ${{ secrets.DEPLOYMENT_USERNAME }}
+          git config --global user.email "github-actions@github.com"
+
+      - name: Tag repositories
+        run: |
+          for repo in "java-activity" "java-catalog" "java-client-gateway" "java-cluster" "java-config" "java-environments" "gateway-service" "nirmata-haproxy" "java-host" "java-orchestrator" "policies-service" "java-security" "java-users" "webclient"; do
+            echo "Tagging $repo"
+            git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/$repo.git
+            cd $repo
+            git tag ${{ github.event.inputs.release_tag }}
+            git push origin ${{ github.event.inputs.release_tag }}
+            cd ..
+          done
+
+  tag-mongodb-images:
+    if: ${{ github.event.inputs.tag_mongodb_images == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
