@@ -11,6 +11,7 @@ on:
         default: 'release/4.22'
         type: choice
         options:
+          - main
           - release/4.22
           - release/4.23
           - release/4.24
