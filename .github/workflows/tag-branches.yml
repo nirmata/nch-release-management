@@ -5,34 +5,22 @@ name: Tag Branches
 on:
   workflow_dispatch:
     inputs:
-      release_branch:
-        description: 'Select a release branch'
-        required: true
-        default: 'release/4.22'
-        type: choice
-        options:
-          - release/4.22
-          - release/4.23
-          - release/4.24
       release_tag:
-        description: 'Enter a tag for the release'
+        description: 'Release tag to apply'
         required: true
         type: string
       tag_repositories:
         description: 'Tag all repositories with the release tag'
-        required: true
+        required: false
         type: boolean
         default: true
       tag_mongodb_images:
         description: 'Tag MongoDB images with the release tag'
-        required: true
+        required: false
         type: boolean
         default: true
 
 env:
-  username: ${{secrets.DEPLOYMENT_USERNAME}}
-  password: ${{secrets.DEPLOYMENT_PAT}}
-  RELEASE_TAG: ${{ github.event.inputs.release_tag }}
   REGISTRY: ghcr.io
   REGISTRY_OWNER: nirmata
 
@@ -40,75 +28,16 @@ jobs:
   tag-branch-and-build-image:
     if: ${{ github.event.inputs.tag_repositories == 'true' }}
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        repo: [ "java-activity", "java-catalog", "java-client-gateway", "java-cluster", "java-config", "java-environments", "gateway-service", "nirmata-haproxy", "java-host", "java-orchestrator", "policies-service", "java-security", "java-users", "webclient"]
-      fail-fast: false # This ensures that all jobs complete, even if one fails
-    
-    steps:
-      - name: Checkout release management repo
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      # Step 2: Set up Git configuration (for tagging)
-      - name: Set up Git
-        run: |
-          git config --global user.name ${{ secrets.DEPLOYMENT_USERNAME }}
-          git config --global user.email "github-actions@github.com"
-
-      # Step 3: Checkout and tag each repository
-      - name: Tag ${{ matrix.repo }} with tag ${{ env.RELEASE_TAG }}
-        run: |
-          git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/${{ matrix.repo }}.git
-          cd ${{ matrix.repo }}
-          git checkout ${{ github.event.inputs.release_branch }}
-          git tag ${{ env.RELEASE_TAG }}
-          git push origin ${{ env.RELEASE_TAG }}
-
-  # Create a new job to enforce serialized execution order
-  tag-branch-and-build-image-serial:
-    if: ${{ github.event.inputs.tag_repositories == 'true' }}
-    needs: tag-branch-and-build-image # This makes the jobs run serially, one after another
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        repo: [ "java-activity", "java-catalog", "java-client-gateway", "java-cluster", "java-config", "java-environments", "gateway-service", "nirmata-haproxy", "java-host", "java-orchestrator", "policies-service", "java-security", "java-users", "webclient"]
-    
-    steps:
-      - name: Checkout release management repo
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Set up Git
-        run: |
-          git config --global user.name ${{ secrets.DEPLOYMENT_USERNAME }}
-          git config --global user.email "github-actions@github.com"
-
-      - name: Verify tag ${{ env.RELEASE_TAG }} for ${{ matrix.repo }}
-        run: |
-          git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/${{ matrix.repo }}.git
-          cd ${{ matrix.repo }}
-          git fetch --tags
-          if ! git tag -l "${{ env.RELEASE_TAG }}" | grep -q "${{ env.RELEASE_TAG }}"; then
-            echo "Tag ${{ env.RELEASE_TAG }} not found in ${{ matrix.repo }}"
-            exit 1
-          fi
-          echo "Tag ${{ env.RELEASE_TAG }} verified in ${{ matrix.repo }}"
-
-  retag-mongodb-images:
-    if: ${{ github.event.inputs.tag_mongodb_images == 'true' }}
-    runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
-      - name: Checkout release management repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: main
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -122,7 +51,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Retag MongoDB Community Server
+      - name: Tag and push MongoDB Community Server
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -130,13 +59,13 @@ jobs:
           pull: true
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-community-server:${{ env.RELEASE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-community-server:${{ github.event.inputs.release_tag }}
           build-args: |
             SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-community-server:8.0.8-ubi8
           provenance: false
           sbom: false
 
-      - name: Retag MongoDB Agent
+      - name: Tag and push MongoDB Agent
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -144,13 +73,13 @@ jobs:
           pull: true
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-agent-ubi:${{ env.RELEASE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-agent-ubi:${{ github.event.inputs.release_tag }}
           build-args: |
             SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-agent-ubi:108.0.2.8729-1
           provenance: false
           sbom: false
 
-      - name: Retag MongoDB Operator Version Upgrade Hook
+      - name: Tag and push MongoDB Operator Version Upgrade Hook
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -158,13 +87,13 @@ jobs:
           pull: true
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator-version-upgrade-post-start-hook:${{ env.RELEASE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator-version-upgrade-post-start-hook:${{ github.event.inputs.release_tag }}
           build-args: |
             SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.10
           provenance: false
           sbom: false
 
-      - name: Retag MongoDB Readiness Probe
+      - name: Tag and push MongoDB Readiness Probe
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -172,82 +101,31 @@ jobs:
           pull: true
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-readinessprobe:${{ env.RELEASE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-readinessprobe:${{ github.event.inputs.release_tag }}
           build-args: |
             SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-readinessprobe:1.0.23
+          provenance: false
+          sbom: false
+
+      - name: Tag and push MongoDB Kubernetes Operator
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator:${{ github.event.inputs.release_tag }}
+          build-args: |
+            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator:0.13.0
           provenance: false
           sbom: false
 
       - name: Verify Multi-Arch Support
         run: |
-          for image in mongodb-community-server mongodb-agent-ubi mongodb-kubernetes-operator-version-upgrade-post-start-hook mongodb-kubernetes-readinessprobe; do
-            echo "Verifying $image:${{ env.RELEASE_TAG }}"
-            docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "amd64"' || exit 1
-            docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "arm64"' || exit 1
-            echo "Multi-arch support verified for $image:${{ env.RELEASE_TAG }}"
-          done
-
-      - name: Tag and push MongoDB Community Server to Quay
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          pull: true
-          push: true
-          tags: |
-            quay.io/nirmata/mongodb-community-server:${{ env.RELEASE_TAG }}
-          build-args: |
-            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-community-server:8.0.8-ubi8
-          provenance: false
-          sbom: false
-
-      - name: Tag and push MongoDB Agent to Quay
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          pull: true
-          push: true
-          tags: |
-            quay.io/nirmata/mongodb-agent-ubi:${{ env.RELEASE_TAG }}
-          build-args: |
-            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-agent-ubi:108.0.2.8729-1
-          provenance: false
-          sbom: false
-
-      - name: Tag and push MongoDB Operator Version Upgrade Hook to Quay
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          pull: true
-          push: true
-          tags: |
-            quay.io/nirmata/mongodb-kubernetes-operator-version-upgrade-post-start-hook:${{ env.RELEASE_TAG }}
-          build-args: |
-            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.10
-          provenance: false
-          sbom: false
-
-      - name: Tag and push MongoDB Readiness Probe to Quay
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          pull: true
-          push: true
-          tags: |
-            quay.io/nirmata/mongodb-kubernetes-readinessprobe:${{ env.RELEASE_TAG }}
-          build-args: |
-            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-readinessprobe:1.0.23
-          provenance: false
-          sbom: false
-
-      - name: Verify Multi-Arch Support for Quay Images
-        run: |
-          for image in mongodb-community-server mongodb-agent-ubi mongodb-kubernetes-operator-version-upgrade-post-start-hook mongodb-kubernetes-readinessprobe; do
-            echo "Verifying quay.io/nirmata/$image"
-            docker manifest inspect quay.io/nirmata/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "amd64"' || exit 1
-            docker manifest inspect quay.io/nirmata/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "arm64"' || exit 1
-            echo "Multi-arch support verified for quay.io/nirmata/$image:${{ env.RELEASE_TAG }}"
+          for image in mongodb-community-server mongodb-agent-ubi mongodb-kubernetes-operator-version-upgrade-post-start-hook mongodb-kubernetes-readinessprobe mongodb-kubernetes-operator; do
+            echo "Verifying $image"
+            docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:${{ github.event.inputs.release_tag }} | grep -q '"architecture": "amd64"' || exit 1
+            docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:${{ github.event.inputs.release_tag }} | grep -q '"architecture": "arm64"' || exit 1
+            echo "Multi-arch support verified for $image:${{ github.event.inputs.release_tag }}"
           done
