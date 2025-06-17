@@ -185,4 +185,69 @@ jobs:
             docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "amd64"' || exit 1
             docker manifest inspect ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "arm64"' || exit 1
             echo "Multi-arch support verified for $image:${{ env.RELEASE_TAG }}"
-          done         
+          done
+
+      - name: Tag and push MongoDB Community Server to Quay
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            quay.io/nirmata/mongodb-community-server:${{ env.RELEASE_TAG }}
+          build-args: |
+            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-community-server:8.0.8-ubi8
+          provenance: false
+          sbom: false
+
+      - name: Tag and push MongoDB Agent to Quay
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            quay.io/nirmata/mongodb-agent-ubi:${{ env.RELEASE_TAG }}
+          build-args: |
+            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-agent-ubi:108.0.2.8729-1
+          provenance: false
+          sbom: false
+
+      - name: Tag and push MongoDB Operator Version Upgrade Hook to Quay
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            quay.io/nirmata/mongodb-kubernetes-operator-version-upgrade-post-start-hook:${{ env.RELEASE_TAG }}
+          build-args: |
+            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.10
+          provenance: false
+          sbom: false
+
+      - name: Tag and push MongoDB Readiness Probe to Quay
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            quay.io/nirmata/mongodb-kubernetes-readinessprobe:${{ env.RELEASE_TAG }}
+          build-args: |
+            SOURCE_IMAGE=${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-readinessprobe:1.0.23
+          provenance: false
+          sbom: false
+
+      - name: Verify Multi-Arch Support for Quay Images
+        run: |
+          for image in mongodb-community-server mongodb-agent-ubi mongodb-kubernetes-operator-version-upgrade-post-start-hook mongodb-kubernetes-readinessprobe; do
+            echo "Verifying quay.io/nirmata/$image"
+            docker manifest inspect quay.io/nirmata/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "amd64"' || exit 1
+            docker manifest inspect quay.io/nirmata/$image:${{ env.RELEASE_TAG }} | grep -q '"architecture": "arm64"' || exit 1
+            echo "Multi-arch support verified for quay.io/nirmata/$image:${{ env.RELEASE_TAG }}"
+          done
