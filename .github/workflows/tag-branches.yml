@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: [ "java-activity", "java-catalog", "java-client-gateway", "java-cluster", "java-config", "java-environments", "gateway-service", "nirmata-haproxy", "java-host", "java-orchestrator", "policies-service", "java-security", "java-users", "webclient"]
+        repo: [ "java-activity", "java-catalog", "java-client-gateway", "java-cluster", "java-config", "java-environments", "gateway-service", "haproxy-nirmata", "java-host", "java-orchestrator", "policies-service", "java-security", "java-users", "webclient"]
       fail-fast: false # This ensures that all jobs complete, even if one fails
     
     steps:
