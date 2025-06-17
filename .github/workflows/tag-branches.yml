@@ -9,6 +9,15 @@ on:
         description: 'Release tag to apply'
         required: true
         type: string
+      branch:
+        description: 'Select branch to tag'
+        required: true
+        type: choice
+        options:
+          - main
+          - release/4.22
+          - release/4.21
+          - release/4.20
       tag_all_repos:
         description: 'Tag all NCH repositories'
         required: false
@@ -136,6 +145,7 @@ jobs:
               echo "Tagging $repo"
               git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/$repo.git
               cd $repo
+              git checkout ${{ github.event.inputs.branch }}
               git tag ${{ github.event.inputs.release_tag }}
               git push origin ${{ github.event.inputs.release_tag }}
               cd ..
@@ -146,6 +156,7 @@ jobs:
                 echo "Tagging $repo"
                 git clone https://x-access-token:${{ secrets.DEPLOYMENT_PAT }}@github.com/nirmata/$repo.git
                 cd $repo
+                git checkout ${{ github.event.inputs.branch }}
                 git tag ${{ github.event.inputs.release_tag }}
                 git push origin ${{ github.event.inputs.release_tag }}
                 cd ..
