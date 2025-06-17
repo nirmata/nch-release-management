@@ -1,0 +1,90 @@
+name: Sync MongoDB Images
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  REGISTRY_OWNER: nirmata
+
+jobs:
+  sync-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync MongoDB Community Server
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-community-server:8.0.8-ubi8
+          build-args: |
+            SOURCE_IMAGE=quay.io/mongodb/mongodb-community-server:8.0.8-ubi8
+          provenance: false
+          sbom: false
+
+      - name: Sync MongoDB Agent
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-agent-ubi:108.0.2.8729-1
+          build-args: |
+            SOURCE_IMAGE=quay.io/mongodb/mongodb-agent-ubi:108.0.2.8729-1
+          provenance: false
+          sbom: false
+
+      - name: Sync MongoDB Operator Version Upgrade Hook
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.10
+          build-args: |
+            SOURCE_IMAGE=quay.io/mongodb/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.10
+          provenance: false
+          sbom: false
+
+      - name: Sync MongoDB Readiness Probe
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_OWNER }}/mongodb-kubernetes-readinessprobe:1.0.23
+          build-args: |
+            SOURCE_IMAGE=quay.io/mongodb/mongodb-kubernetes-readinessprobe:1.0.23
+          provenance: false
+          sbom: false 
