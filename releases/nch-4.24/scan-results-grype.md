@@ -2,9 +2,9 @@
 
 **Release:** nch-4.24
 **Tag:** 4.24.0-rc1
-**Scan Date:** 2025-08-20 23:51:09 UTC
+**Scan Date:** 2025-08-20 23:57:59 UTC
 **Grype Version:** Application: grype
-**Workflow Run:** [17113098649](https://github.com/nirmata/nch-release-management/actions/runs/17113098649)
+**Workflow Run:** [17113189126](https://github.com/nirmata/nch-release-management/actions/runs/17113189126)
 
 ---
 
