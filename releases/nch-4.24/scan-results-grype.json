@@ -1,0 +1,33 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:a6741e82-17fb-4dad-9af5-9cf236aea4ed",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-08-20T23:43:15Z",
+    "tools": [
+      {
+        "vendor": "Anchore",
+        "name": "grype",
+        "version": ""
+      }
+    ],
+    "component": {
+      "type": "container",
+      "name": "nch-4.24",
+      "version": "4.24.0-rc1"
+    },
+    "properties": [
+      {
+        "name": "workflow_run_id",
+        "value": "17112993922"
+      },
+      {
+        "name": "release",
+        "value": "nch-4.24"
+      }
+    ]
+  },
+  "components": [],
+  "vulnerabilities": []
+}
