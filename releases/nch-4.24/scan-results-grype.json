@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.4",
-  "serialNumber": "urn:uuid:c18b750c-0ac4-46bb-8288-be2ca2d8ebf6",
+  "serialNumber": "urn:uuid:5ad72b5c-02b6-4be1-8493-f47b5e9c36cb",
   "version": 1,
   "metadata": {
-    "timestamp": "2025-08-20T23:57:59Z",
+    "timestamp": "2025-08-21T19:06:20Z",
     "tools": [
       {
         "vendor": "Anchore",
@@ -20,7 +20,7 @@
     "properties": [
       {
         "name": "workflow_run_id",
-        "value": "17113189126"
+        "value": "17136474962"
       },
       {
         "name": "release",
