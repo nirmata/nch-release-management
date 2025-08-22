@@ -1,0 +1,4 @@
+NAME,INSTALLED,FIXED_IN,TYPE,VULNERABILITY,SEVERITY,EPSS_RAW,RISK,PUBLISHED_DATE
+{{- range .Matches }}
+"{{.Artifact.Name}}","{{.Artifact.Version}}","{{- if .Vulnerability.Fix.Versions }}{{index .Vulnerability.Fix.Versions 0}}{{- end }}","{{.Artifact.Type}}","{{.Vulnerability.ID}}","{{.Vulnerability.Severity}}","{{- if .Vulnerability.EPSS }}{{- if gt (len .Vulnerability.EPSS) 0 }}{{(index .Vulnerability.EPSS 0).Percentile}}{{- else }}0{{- end }}{{- else }}0{{- end }}","{{- if .Vulnerability.Risk }}{{.Vulnerability.Risk}}{{- else }}0{{- end }}","{{.Vulnerability.ID}}"
+{{- end -}}

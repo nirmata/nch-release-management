@@ -1,0 +1,5 @@
+{{- /* Simple template to explore available fields */ -}}
+VULNERABILITY,SEVERITY,CVE_ID
+{{- range .Matches -}}
+"{{.Vulnerability.ID}}","{{.Vulnerability.Severity}}","{{- range .RelatedVulnerabilities -}}{{.ID}}{{- end -}}"
+{{- end -}}

@@ -1,0 +1,5 @@
+{{- /* Custom Grype template with proper formatting */ -}}
+NAME,INSTALLED,FIXED_IN,TYPE,VULNERABILITY,SEVERITY,EPSS,RISK,PUBLISHED_DATE
+{{- range .Matches }}
+"{{.Artifact.Name}}","{{.Artifact.Version}}","{{- if .Vulnerability.Fix.Versions -}}{{index .Vulnerability.Fix.Versions 0}}{{- end -}}","{{.Artifact.Type}}","{{.Vulnerability.ID}}","{{.Vulnerability.Severity}}","{{- if .Vulnerability.EPSS -}}{{- if gt (len .Vulnerability.EPSS) 0 -}}{{printf "%.3f" (mul (index .Vulnerability.EPSS 0).Percentile 100)}}%{{- else -}}N/A{{- end -}}{{- else -}}N/A{{- end -}}","{{- if .Vulnerability.Risk -}}{{printf "%.6f" .Vulnerability.Risk}}{{- else -}}N/A{{- end -}}","{{- if .Vulnerability.ID | hasPrefix "CVE-" -}}{{- $parts := split "-" .Vulnerability.ID -}}{{- if gt (len $parts) 1 -}}{{index $parts 1}} (estimated){{- else -}}N/A{{- end -}}{{- else if .Vulnerability.ID | hasPrefix "GHSA-" -}}GitHub Advisory{{- else -}}N/A{{- end -}}"
+{{- end -}}
