@@ -1,3 +1,0 @@
-
-ID: GHSA-j288-q9x7-2f5v
-FIRST_3: 

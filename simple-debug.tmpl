@@ -1,9 +1,0 @@
-{{- range .Matches }}
-ID: {{.Vulnerability.ID}}
-EPSS_LEN: {{len .Vulnerability.EPSS}}
-{{- if .Vulnerability.EPSS }}{{- if gt (len .Vulnerability.EPSS) 0 }}
-EPSS_VAL: {{(index .Vulnerability.EPSS 0).Percentile}}
-EPSS_TYPE: {{printf "%T" (index .Vulnerability.EPSS 0).Percentile}}
-{{- end }}{{- end }}
----
-{{- end -}}

@@ -1,3 +1,0 @@
-{{- range .Matches }}
-{{.Vulnerability.ID}},{{.Vulnerability.Severity}},{{- if hasPrefix .Vulnerability.ID "CVE-" }}CVE{{- else }}OTHER{{- end }}
-{{- end -}}
